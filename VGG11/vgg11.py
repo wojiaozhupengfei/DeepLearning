@@ -11,10 +11,11 @@
 import pandas as pd
 import tensorflow as tf
 from tflearn.datasets import oxflower17
-import sys
+import time
 
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 1000)
 
 #调用接口，自动下载数据集oxFlower17，并将数据进行解析为One_hot
 X, Y = oxflower17.load_data(one_hot=True)
@@ -115,10 +116,10 @@ def vgg_network():
 
 # 3. 设计损失函数和优化器，并求精确率
 pred = vgg_network() # vgg11 最后一次的输出, 没有经过softmax
-# softmax交叉熵损失函数，该函数集成了softmax和交叉熵，但是最后的返回值查看API是维度和logits一样，我觉得不应该是一个数吗，写完代码调试看看
+# softmax交叉熵损失函数，该函数集成了softmax和交叉熵
 loss = tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y)
 opt = tf.train.AdamOptimizer(learning_rate=learn_rate).minimize(loss) #优化器,BP计算就是在这里
-acc_tf = tf.equal(tf.arg_max(pred, 1), tf.arg_max(y, 1)) #调试看看形状,最新文档改为tf.argmax
+acc_tf = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1)) #调试看看形状,最新文档改为tf.argmax
 acc = tf.reduce_mean(tf.cast(acc_tf, tf.float32))
 
 # 4.开始训练！！！！！！！！！！！！
@@ -127,11 +128,25 @@ with tf.Session() as sess:
 	base_learn_rate = 0.001 #初始化学习率
 	learn_rate1 = base_learn_rate  #这里的learn_rate1仅仅是为了和上面的learn_rate不重名
 	for epoch in range(train_epoch): # 1000次epoch
-		total_bitch = X.shape[0] // batch_size #计算一个epoch要进行几轮batch_size
-		for i in range(total_bitch): # 1360 / 16 = 85
-			print('当前epoch为:%s'%(str(epoch)) + 'total_batch为:%s'%(str(i)))
+		iterations = X.shape[0] // batch_size #计算一个epoch要进行几轮batch_size
+		for i in range(iterations): # 1360 / 16 = 85
+			iterations_start_time = time.time()
+			print('当前epoch为: %s'%(str(epoch)) + ' ' + 'total_batch为: %s'%(str(i)) + '\n')
 			x_trian, y_train = X[i * batch_size : i * batch_size + batch_size], Y[i * batch_size : i * batch_size + batch_size] #训练集和测试集取batch_size大小
 			sess.run(opt, feed_dict={x:x_trian, y:y_train, learn_rate:learn_rate1})
+			cost, accur_tf, accur = sess.run([loss, acc_tf, acc], feed_dict={x:x_trian, y:y_train, learn_rate:learn_rate1})
+			# print('%s - %s 的loss为: %s'%(str(epoch), str(i), str(cost)) + '\n')
+			# print('%s - %s 的accur_tf为: %s'%(str(epoch), str(i), str(accur_tf)) + '\n')
+			# print('%s - %s 的accur为: %s' % (str(epoch), str(i), str(accur)) + '\n')
+
+			if (epoch + 1) % epoch_display == 0: # 100个epoch打印一次
+				cost, accur = sess.run([loss, acc], feed_dict={x:x_trian, y:y_train, learn_rate : learn_rate1})
+				print('step: %s loss: %f acc: %f'%(str(epoch), cost[0], accur))
+				learn_rate1 = base_learn_rate * (1 - epoch/train_epoch)**2  # 学习率退火
+
+			iterations_end_tiem = time.time()
+			print('一次迭代需要训练时间(s): %d'%(iterations_end_tiem - iterations_start_time) + '\n')
+
 
 
 
