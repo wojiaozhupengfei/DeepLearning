@@ -31,7 +31,7 @@ def _conv_layer(input, weights, bias):
 
 # 池化层
 def pool_layer(input):
-	result = tf.nn.max_pool(input, [1, 2, 2, 1], [1, 2, 2, 1], padding='SAME') # 这里的ksize和strides前后都是1，固定语法格式
+	result = tf.nn.max_pool(input, [1, 2, 2, 1], [1, 2, 2, 1], padding='SAME') # 这里的ksize和strides格式为[batch, stride, stride, channel]
 	return result
 
 # 均值预处理
