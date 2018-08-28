@@ -44,7 +44,7 @@ def vgg_network():
 		'wc4_1' : tf.get_variable('wc4_1', [3, 3, 256, 512]), #该层之后没有池化层
 		'wc4_2' : tf.get_variable('wc4_2', [3, 3, 512, 512]), #该层之后有池化层， 输出特征图 14 * 14 * 512
 		'wc5_1' : tf.get_variable('wc5_1', [3, 3, 512, 512]), #该层之后没有池化层
-		'wc5_2' : tf.get_variable('wc5_2', [3, 3, 512, 512]), # 该层之后有池化层， 输入特征图 7 * 7 * 512
+		'wc5_2' : tf.get_variable('wc5_2', [3, 3, 512, 512]), # 该层之后有池化层， 输出特征图 7 * 7 * 512
 		'wfc_1' : tf.get_variable('wfc1', [7 * 7 * 512, 4096]), #将特征图拉直，进行全连接
 		'wfc_2' : tf.get_variable('wfc2', [4096, 4096]), #第2个全连接层
 		'wfc_3' : tf.get_variable('wfc3', [4096, class_num])#最后一层全连接输出class_num，softmax分类

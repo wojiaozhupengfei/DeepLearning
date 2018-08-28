@@ -18,7 +18,7 @@ import os
 
 pd.set_option('display.max_columns', None) #设置显示数据最大列
 pd.set_option('display.max_rows', None) #设置显示数据最大行
-pd.set_option('display.width', 1000)
+pd.set_option('display.width', 10000)
 
 # 使用ImageNet训练好的参数，大概看看参数的布局
 # data = scipy.io.loadmat('./data/imagenet-vgg-verydeep-19.mat')
