@@ -17,7 +17,7 @@ mnist = input_data.read_data_sets('./data//', one_hot=True)
 lr = 0.0001
 train_iters = 10000
 batch_size = 16
-input_dim = 784
+input_dim = 784  # 28*28*1 的单通道图像，拉伸成一维
 mnist_class = 10
 dropout = 0.5
 display_step = 1
@@ -31,14 +31,14 @@ def conv2d(name, input_data, filter, bias):
     x = tf.nn.conv2d(input_data, filter=filter, strides=[1, 1, 1, 1], padding='SAME', name=None, use_cudnn_on_gpu=False, data_format='NHWC')
     x = tf.nn.bias_add(x, bias, data_format=None, name=None)
     return tf.nn.relu(x, name=name)
-# 池化
+# 池化， ksize的数据结构[batche_number， k, k, channel]
 def max_pooling(name, input_data, k):
     return tf.nn.max_pool(input_data, ksize=[1, k, k, 1],strides=[1, k, k, 1], padding='SAME', name=name)
 
 
 # lrn  局部响应归一化
 def norm(name, input_data, lsize = 4):
-    return tf.nn.lrn(input_data, depth_radius=4, bias=1, alpha=1, beta=0.5, nema=name)
+    return tf.nn.lrn(input_data, depth_radius=lsize, bias=1, alpha=1, beta=0.5, name=name)
 
 # 定义网络参数
 weights = {
@@ -64,7 +64,7 @@ bias = {
 }
 
 # alexnet
-def AlexNet(name, input_image, weights, bias, dropout):
+def AlexNet(input_image, weights, bias, dropout):
     input_image = tf.reshape(input_image, shape=[-1, 28, 28, 1])
 
     # conv1
@@ -103,3 +103,24 @@ def AlexNet(name, input_image, weights, bias, dropout):
     #out
     out = tf.matmul(dense2, weights['wfc3']) + bias['bwfc3']
     return out
+
+# 构建模型, 包括 1.输出预测，2.学习率动态下降 3.损失函数 4.优化器 5.准确率
+# 输出预测
+pred = AlexNet(x, weights, bias, dropout=dropout)
+
+# 学习率,计算公式 lr = lr * decay_rate^(global_step/decay_step)
+# global_step = tf.constant(0, tf.int64)
+# decay_rate = tf.constant(0.9, tf.float64)
+# learn_rate = tf.train.exponential_decay(lr, global_step, decay_steps=10000, decay_rate = decay_rate)
+#
+# # 交叉熵损失函数
+# cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=y))
+#
+# # 优化器
+# optimizer = tf.train.AdamOptimizer(learn_rate).minimize(cost)
+#
+# # 准确率
+# acc_tf = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+#
+# acc = tf.reduce_mean(tf.cast(acc_tf, tf.float32))
+
