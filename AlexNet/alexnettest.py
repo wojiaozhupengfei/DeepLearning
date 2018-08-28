@@ -109,18 +109,18 @@ def AlexNet(input_image, weights, bias, dropout):
 pred = AlexNet(x, weights, bias, dropout=dropout)
 
 # 学习率,计算公式 lr = lr * decay_rate^(global_step/decay_step)
-# global_step = tf.constant(0, tf.int64)
-# decay_rate = tf.constant(0.9, tf.float64)
-# learn_rate = tf.train.exponential_decay(lr, global_step, decay_steps=10000, decay_rate = decay_rate)
-#
-# # 交叉熵损失函数
-# cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=y))
-#
-# # 优化器
-# optimizer = tf.train.AdamOptimizer(learn_rate).minimize(cost)
-#
-# # 准确率
-# acc_tf = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
-#
-# acc = tf.reduce_mean(tf.cast(acc_tf, tf.float32))
+global_step = tf.constant(0, tf.int64)
+decay_rate = tf.constant(0.9, tf.float64)
+learn_rate = tf.train.exponential_decay(lr, global_step, decay_steps=10000, decay_rate = decay_rate)
+
+# 交叉熵损失函数
+cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=y))
+
+# 优化器
+optimizer = tf.train.AdamOptimizer(learn_rate).minimize(cost)
+
+# 准确率
+acc_tf = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+
+acc = tf.reduce_mean(tf.cast(acc_tf, tf.float32))
 
