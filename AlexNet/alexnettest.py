@@ -176,4 +176,50 @@ def train():
         print("Testing Accuracy:",
               sess.run(acc, feed_dict={x: mnist.test.images[:256], y: mnist.test.labels[:256], drop_out: 1.}))
 if __name__=='__main__':
-    train()
+    if os.path.exists('ckpt'): # 如果训练好的文件夹找到了，就开始测试
+        count = 0
+        listd = os.listdir('ckpt') # 返回一个列表，存放了该文件下所有文件的name，不包括特殊字符
+        for f in listd:
+            count += 1  # 看看这个文件夹下是不是有四个文件，我们训练好的文件有四个
+        if count == 4: # 如果存在模型，开始调用
+            init = tf.global_variables_initializer()
+            restore = tf.train.Saver()  #Saver有两个属性save和restore，保存和加载
+            with tf.Session() as sess:
+                # sess.run(init) #初始化,这里不需要，因为restore方法加载ckpt文件就是一种初始化
+                '''
+                该函数返回的是checkpoint文件CheckpointState proto类型的内容，
+                其中有 model_checkpoint_path 和 all_model_checkpoint_paths 两个属性。
+                其中model_checkpoint_path保存了最新的tensorflow模型文件的文件名，
+                all_model_checkpoint_paths则有未被删除的所有tensorflow模型文件的文件名
+                '''
+                ckpt = tf.train.get_checkpoint_state('ckpt')
+                if ckpt and ckpt.model_checkpoint_path: #文件存在
+                    restore.restore(sess, ckpt.model_checkpoint_path) #加载训练好的模型，并加载进入sess
+                image_index = 10 #测试的时候取一张图片，这个编号是10的图片
+                test_image = tf.reshape(mnist.test.images, [-1, 28, 28, 1]) #将测试集还原为图片格式
+                a_image = sess.run(test_image)[image_index, :, :, 0] #取出index为10的这张图片
+                input_image = mnist.test.images[image_index:image_index + 1, :]
+                predict = sess.run(pred, feed_dict={x:input_image, drop_out:1.})
+                result = tf.argmax(predict, 1)
+                a_image = tf.reshap(input_image, [1, 28, 28])
+
+                print('prediction is :', sess.run(result))
+                import matplotlib.pyplot as plt
+                import pylab
+                plt.imshow(a_image)
+                pylab.show()
+
+                print(sess.run(weights['wc1']).shape)
+                '''
+                fig：matplotlib.figure.Figure对象
+                ax：Axes(轴)对象或Axes(轴)对象数组
+                '''
+                f, axarr = plt.subplot(4, figsize = [10, 10])
+                axarr[0].imshow(sess.run(weights['wc1'])[:, :, 0, 0])
+                axarr[1].imshow(sess.run(weights['wc2'])[:, :, 23, 12])
+                axarr[2].imshow(sess.run(weights['wc3'])[:, :, 41, 44])
+                axarr[3].imshow(sess.run(weights['wc4'])[:, :, 45, 55])
+                pylab.show()
+
+    else:
+        train()
