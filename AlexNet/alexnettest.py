@@ -9,14 +9,15 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data # 导入tf库的手写字体识别的dataset
 import numpy as np
 import os
+import sys
 
 # 1.导入数据集
 mnist = input_data.read_data_sets('./data//', one_hot=True)
 
 # 2.定义全局参数
-lr = 0.0001
-train_iters = 10000
-batch_size = 16
+lr = 0.00001
+train_iters = 100000
+batch_size = 64
 input_dim = 784  # 28*28*1 的单通道图像，拉伸成一维
 mnist_class = 10
 dropout = 0.5
@@ -24,6 +25,7 @@ display_step = 1
 
 x = tf.placeholder(tf.float32, [None, input_dim])
 y = tf.placeholder(tf.float32, [None, mnist_class])
+drop_out = tf.placeholder(tf.float32)
 
 # 3.定义函数，包括 卷积，池化，正则， alexnet
 # 卷积
@@ -106,7 +108,7 @@ def AlexNet(input_image, weights, bias, dropout):
 
 # 构建模型, 包括 1.输出预测，2.学习率动态下降 3.损失函数 4.优化器 5.准确率
 # 输出预测
-pred = AlexNet(x, weights, bias, dropout=dropout)
+pred = AlexNet(x, weights, bias, drop_out)
 
 # 学习率,计算公式 lr = lr * decay_rate^(global_step/decay_step)
 global_step = tf.constant(0, tf.int64)
@@ -120,7 +122,53 @@ cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, la
 optimizer = tf.train.AdamOptimizer(learn_rate).minimize(cost)
 
 # 准确率
+#tf.arg_max(pred,1)是按行取最大值的下标,假如下标一样，返回TRUE，否则返回False
 acc_tf = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
 
+#先将correct_pred中TRUE和false转换为float32类型,1,0
+#求correct_pred中的平均值，因为correct_pred中除了0就是1，因此求平均值即为1的所占比例，即正确率
 acc = tf.reduce_mean(tf.cast(acc_tf, tf.float32))
+
+# 初始化共享变量
+init = tf.global_variables_initializer()
+
+# 创建训练函数
+def train():
+    with tf.Session() as sess:
+        sess.run(init) # 初始化
+        step = 1
+        while step*batch_size < train_iters:
+            x_train, y_train = mnist.train.next_batch(batch_size) # 按照batch_size取出数据
+            sess.run(optimizer, feed_dict={x:x_train, y:y_train, drop_out:dropout}) # 训练参数
+            if step % display_step == 0:
+                costplay = sess.run(cost, feed_dict={x:x_train, y:y_train, drop_out:1.}) # 计算损失
+                accplay = sess.run(acc, feed_dict={x:x_train, y:y_train, drop_out:1.}) # 计算精度
+                print ("Iter " + str(step) + ", Minibatch Loss = " + "{:.6f}".format(costplay) + ", Training Accuracy = " + "{:.5f}".format(accplay))
+
+            step += 1
+        print('optimizer finished')
+
+        # 保存模型
+        saver = tf.train.Saver() # 初始化一个保存实例
+        save_path = 'ckpt' # 保存路径名称
+        if not os.path.exists(save_path):
+            os.makedirs(save_path) # 检查是否存在了该文件
+        model_name = save_path + os.sep + 'alexnet.ckpt'
+        saver.save(sess, model_name)
+
+        # # 可视化图片
+        # img_index = 0
+        # image_input = mnist.test.images[img_index:img_index + 1, :]
+        # predict = sess.run(pred, feed_dict={x:image_input, drop_out : 1.})
+        # print('图片是:', predict)
+        # image_input += 1
+
+        # 测试精度
+        acc_test = sess.run(acc, feed_dict={x:mnist.test.images[:255], y:mnist.test.labels[:255], drop_out:1.})
+        print('测试集准确率：' , acc_test)
+
+if __name__ == '__main__':
+    train()
+
+
 
