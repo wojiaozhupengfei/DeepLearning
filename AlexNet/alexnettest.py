@@ -24,6 +24,7 @@ display_step = 1
 
 x = tf.placeholder(tf.float32, [None, input_dim])
 y = tf.placeholder(tf.float32, [None, mnist_class])
+drop_out = tf.placeholder(tf.float32)
 
 # 3.定义函数，包括 卷积，池化，正则， alexnet
 # 卷积
@@ -106,7 +107,7 @@ def AlexNet(input_image, weights, bias, dropout):
 
 # 构建模型, 包括 1.输出预测，2.学习率动态下降 3.损失函数 4.优化器 5.准确率
 # 输出预测
-pred = AlexNet(x, weights, bias, dropout=dropout)
+pred = AlexNet(x, weights, bias, drop_out)
 
 # 学习率,计算公式 lr = lr * decay_rate^(global_step/decay_step)
 global_step = tf.constant(0, tf.int64)
@@ -124,3 +125,55 @@ acc_tf = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
 
 acc = tf.reduce_mean(tf.cast(acc_tf, tf.float32))
 
+# 初始化所有的共享变量
+init = tf.global_variables_initializer()
+
+# 开启一个训练
+def train():
+    with tf.Session() as sess:
+        sess.run(init)
+        step = 1
+        # 迭代次数不超过规定最大次数（training_iters）
+        while step * batch_size < train_iters:
+            # 每一次从mnist的训练集中取出batch_size个图片数据，进行训练
+            # batch_xs为图片数据 ； batch_ys 为标签值
+            batch_xs, batch_ys = mnist.train.next_batch(batch_size)
+            # 获取批数据，开始训练
+            sess.run(optimizer, feed_dict={x: batch_xs, y: batch_ys, drop_out: dropout})
+            # 每次运行display_step=20步，计算精度，计算损失值和打印
+            if step % display_step == 0:
+                # 计算精度
+                accplay = sess.run(acc, feed_dict={x: batch_xs, y: batch_ys, drop_out: 1.})
+                # 计算损失值
+                loss = sess.run(cost, feed_dict={x: batch_xs, y: batch_ys, drop_out: 1.})
+                print("Iter " + str(step * batch_size) + ", Minibatch Loss = " + "{:.6f}".format(
+                    loss) + ", Training Accuracy = " + "{:.5f}".format(accplay))
+            step += 1
+        print("Optimization Finished!")
+        # 保存模型
+        # 初始化一个保存方法
+        saver = tf.train.Saver()
+        # 制定保存文件夹名称
+        save_path = 'ckpt'
+        # 检查文件夹是否存在，假如不存在文件夹，就创建一个文件夹
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)
+        # 制定模型保存的路径下的文件名，
+        model_name = save_path + os.sep + "alexnet.ckpt"
+        # 调用保存方法，sess就是模型的参数和对应的值
+        saver.save(sess, model_name)
+
+        # 可视化图片
+
+        # img_input=mnist.test.images[img_index:img_index+1,:]
+        # predict=sess.run(pred,feed_dict={x:img_input,drop_prob:1.0})
+        # Nums = [0,1,2,3,4,5,6,7,8,9]
+
+        # print ('prediction is:',np.where(np.int16(np.round(predict[img_index,:],0))==1)[0][0])
+        ##可视化卷积核
+
+        # 计算测试精度
+        print("Testing Accuracy:",
+              sess.run(acc, feed_dict={x: mnist.test.images[:256], y: mnist.test.labels[:256], drop_out: 1.}))
+if __name__=='__main__':
+    train()
