@@ -180,7 +180,7 @@ if __name__=='__main__':
         count = 0
         listd = os.listdir('ckpt') # 返回一个列表，存放了该文件下所有文件的name，不包括特殊字符
         for f in listd:
-            count += 1  # 看看这个文件夹下是不是有四个文件，我们训练好的文件有四个
+            count += 1  # 看看这个文件夹下是不是有四个文件
         if count == 4: # 如果存在模型，开始调用
             init = tf.global_variables_initializer()
             restore = tf.train.Saver()  #Saver有两个属性save和restore，保存和加载
@@ -201,20 +201,21 @@ if __name__=='__main__':
                 input_image = mnist.test.images[image_index:image_index + 1, :]
                 predict = sess.run(pred, feed_dict={x:input_image, drop_out:1.})
                 result = tf.argmax(predict, 1)
-                a_image = tf.reshap(input_image, [1, 28, 28])
+                a_image = tf.reshape(input_image, [1, 28, 28])
 
                 print('prediction is :', sess.run(result))
                 import matplotlib.pyplot as plt
-                import pylab
-                plt.imshow(a_image)
+                import pylab #该模块和pyplot基本一样，就是加入了一些numpy的计算哭，方便画图的时候来计个算，不推荐
+                # plt.imshow(a_image)
                 pylab.show()
 
                 print(sess.run(weights['wc1']).shape)
                 '''
+                这里注意subplot和subplots的微妙区别
                 fig：matplotlib.figure.Figure对象
-                ax：Axes(轴)对象或Axes(轴)对象数组
+                ax：Axes(轴)对象或Axes(轴)对象数组  
                 '''
-                f, axarr = plt.subplot(4, figsize = [10, 10])
+                f, axarr = plt.subplots(4, figsize = [10, 10])
                 axarr[0].imshow(sess.run(weights['wc1'])[:, :, 0, 0])
                 axarr[1].imshow(sess.run(weights['wc2'])[:, :, 23, 12])
                 axarr[2].imshow(sess.run(weights['wc3'])[:, :, 41, 44])
