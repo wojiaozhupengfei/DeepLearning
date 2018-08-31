@@ -9,15 +9,14 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data # 导入tf库的手写字体识别的dataset
 import numpy as np
 import os
-import sys
 
 # 1.导入数据集
 mnist = input_data.read_data_sets('./data//', one_hot=True)
 
 # 2.定义全局参数
-lr = 0.00001
-train_iters = 100000
-batch_size = 64
+lr = 0.0001
+train_iters = 10000
+batch_size = 16
 input_dim = 784  # 28*28*1 的单通道图像，拉伸成一维
 mnist_class = 10
 dropout = 0.5
@@ -122,53 +121,105 @@ cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, la
 optimizer = tf.train.AdamOptimizer(learn_rate).minimize(cost)
 
 # 准确率
-#tf.arg_max(pred,1)是按行取最大值的下标,假如下标一样，返回TRUE，否则返回False
 acc_tf = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
 
-#先将correct_pred中TRUE和false转换为float32类型,1,0
-#求correct_pred中的平均值，因为correct_pred中除了0就是1，因此求平均值即为1的所占比例，即正确率
 acc = tf.reduce_mean(tf.cast(acc_tf, tf.float32))
 
-# 初始化共享变量
+# 初始化所有的共享变量
 init = tf.global_variables_initializer()
 
-# 创建训练函数
+# 开启一个训练
 def train():
     with tf.Session() as sess:
-        sess.run(init) # 初始化
+        sess.run(init)
         step = 1
-        while step*batch_size < train_iters:
-            x_train, y_train = mnist.train.next_batch(batch_size) # 按照batch_size取出数据
-            sess.run(optimizer, feed_dict={x:x_train, y:y_train, drop_out:dropout}) # 训练参数
+        # 迭代次数不超过规定最大次数（training_iters）
+        while step * batch_size < train_iters:
+            # 每一次从mnist的训练集中取出batch_size个图片数据，进行训练
+            # batch_xs为图片数据 ； batch_ys 为标签值
+            batch_xs, batch_ys = mnist.train.next_batch(batch_size)
+            # 获取批数据，开始训练
+            sess.run(optimizer, feed_dict={x: batch_xs, y: batch_ys, drop_out: dropout})
+            # 每次运行display_step=20步，计算精度，计算损失值和打印
             if step % display_step == 0:
-                costplay = sess.run(cost, feed_dict={x:x_train, y:y_train, drop_out:1.}) # 计算损失
-                accplay = sess.run(acc, feed_dict={x:x_train, y:y_train, drop_out:1.}) # 计算精度
-                print ("Iter " + str(step) + ", Minibatch Loss = " + "{:.6f}".format(costplay) + ", Training Accuracy = " + "{:.5f}".format(accplay))
-
+                # 计算精度
+                accplay = sess.run(acc, feed_dict={x: batch_xs, y: batch_ys, drop_out: 1.})
+                # 计算损失值
+                loss = sess.run(cost, feed_dict={x: batch_xs, y: batch_ys, drop_out: 1.})
+                print("Iter " + str(step * batch_size) + ", Minibatch Loss = " + "{:.6f}".format(
+                    loss) + ", Training Accuracy = " + "{:.5f}".format(accplay))
             step += 1
-        print('optimizer finished')
-
+        print("Optimization Finished!")
         # 保存模型
-        saver = tf.train.Saver() # 初始化一个保存实例
-        save_path = 'ckpt' # 保存路径名称
+        # 初始化一个保存方法
+        saver = tf.train.Saver()
+        # 制定保存文件夹名称
+        save_path = 'ckpt'
+        # 检查文件夹是否存在，假如不存在文件夹，就创建一个文件夹
         if not os.path.exists(save_path):
-            os.makedirs(save_path) # 检查是否存在了该文件
-        model_name = save_path + os.sep + 'alexnet.ckpt'
+            os.mkdir(save_path)
+        # 制定模型保存的路径下的文件名，
+        model_name = save_path + os.sep + "alexnet.ckpt"
+        # 调用保存方法，sess就是模型的参数和对应的值
         saver.save(sess, model_name)
 
-        # # 可视化图片
-        # img_index = 0
-        # image_input = mnist.test.images[img_index:img_index + 1, :]
-        # predict = sess.run(pred, feed_dict={x:image_input, drop_out : 1.})
-        # print('图片是:', predict)
-        # image_input += 1
+        # 可视化图片
 
-        # 测试精度
-        acc_test = sess.run(acc, feed_dict={x:mnist.test.images[:255], y:mnist.test.labels[:255], drop_out:1.})
-        print('测试集准确率：' , acc_test)
+        # img_input=mnist.test.images[img_index:img_index+1,:]
+        # predict=sess.run(pred,feed_dict={x:img_input,drop_prob:1.0})
+        # Nums = [0,1,2,3,4,5,6,7,8,9]
 
-if __name__ == '__main__':
-    train()
+        # print ('prediction is:',np.where(np.int16(np.round(predict[img_index,:],0))==1)[0][0])
+        ##可视化卷积核
 
+        # 计算测试精度
+        print("Testing Accuracy:",
+              sess.run(acc, feed_dict={x: mnist.test.images[:256], y: mnist.test.labels[:256], drop_out: 1.}))
+if __name__=='__main__':
+    if os.path.exists('ckpt'): # 如果训练好的文件夹找到了，就开始测试
+        count = 0
+        listd = os.listdir('ckpt') # 返回一个列表，存放了该文件下所有文件的name，不包括特殊字符
+        for f in listd:
+            count += 1  # 看看这个文件夹下是不是有四个文件，我们训练好的文件有四个
+        if count == 4: # 如果存在模型，开始调用
+            init = tf.global_variables_initializer()
+            restore = tf.train.Saver()  #Saver有两个属性save和restore，保存和加载
+            with tf.Session() as sess:
+                # sess.run(init) #初始化,这里不需要，因为restore方法加载ckpt文件就是一种初始化
+                '''
+                该函数返回的是checkpoint文件CheckpointState proto类型的内容，
+                其中有 model_checkpoint_path 和 all_model_checkpoint_paths 两个属性。
+                其中model_checkpoint_path保存了最新的tensorflow模型文件的文件名，
+                all_model_checkpoint_paths则有未被删除的所有tensorflow模型文件的文件名
+                '''
+                ckpt = tf.train.get_checkpoint_state('ckpt')
+                if ckpt and ckpt.model_checkpoint_path: #文件存在
+                    restore.restore(sess, ckpt.model_checkpoint_path) #加载训练好的模型，并加载进入sess
+                image_index = 10 #测试的时候取一张图片，这个编号是10的图片
+                test_image = tf.reshape(mnist.test.images, [-1, 28, 28, 1]) #将测试集还原为图片格式
+                a_image = sess.run(test_image)[image_index, :, :, 0] #取出index为10的这张图片
+                input_image = mnist.test.images[image_index:image_index + 1, :]
+                predict = sess.run(pred, feed_dict={x:input_image, drop_out:1.})
+                result = tf.argmax(predict, 1)
+                a_image = tf.reshap(input_image, [1, 28, 28])
 
+                print('prediction is :', sess.run(result))
+                import matplotlib.pyplot as plt
+                import pylab
+                plt.imshow(a_image)
+                pylab.show()
 
+                print(sess.run(weights['wc1']).shape)
+                '''
+                fig：matplotlib.figure.Figure对象
+                ax：Axes(轴)对象或Axes(轴)对象数组
+                '''
+                f, axarr = plt.subplot(4, figsize = [10, 10])
+                axarr[0].imshow(sess.run(weights['wc1'])[:, :, 0, 0])
+                axarr[1].imshow(sess.run(weights['wc2'])[:, :, 23, 12])
+                axarr[2].imshow(sess.run(weights['wc3'])[:, :, 41, 44])
+                axarr[3].imshow(sess.run(weights['wc4'])[:, :, 45, 55])
+                pylab.show()
+
+    else:
+        train()
