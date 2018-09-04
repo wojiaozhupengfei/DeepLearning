@@ -7,3 +7,6 @@
 #@Software :PyCharm
 #@descibe  ：
 from .ActivationFunction import *
+from .network import *
+from .LossAndGradient import *
+from .mnist_data import *
