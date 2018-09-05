@@ -9,7 +9,37 @@
 import numpy as np
 # from ActivationFunction import indentity_function
 from utils.ActivationFunction import *
+from utils.LossAndGradient import *
 
+# 创建一个单层网络
+class simpltNet():
+	def __init__(self):
+		self.w = np.random.randn(2, 3)
+
+	def predict(self, x):
+		z = np.dot(x, self.w)
+		return z
+
+	def loss(self, x, t):
+		z = self.predict(x)
+		y = softmax(z)
+		loss = cross_entropy_error(y, t)
+		return loss
+
+net = simpltNet()
+# print(net.w)
+x = np.array([0.6, 0.9])
+p = net.predict(x)
+print('yucezhi',p)
+print(np.argmax(p))
+t = np.array([0, 0, 1])
+loss = net.loss(x, t)
+print(loss)
+f = lambda w:net.loss(x, t)
+dw = numerical_gradient(f, net.w)
+print(dw)
+
+sys.exit()
 # 1 初始化每一层的参数
 # 输入2 隐层3+2 输出2
 def init_network():
@@ -38,8 +68,8 @@ def forword(network, x):
 
 	return y
 
-network = init_network() # 初始化网络
-x = np.array([1, 5])
-y = forword(network, x)
-print(y)
+# network = init_network() # 初始化网络
+# x = np.array([1, 5])
+# y = forword(network, x)
+# print(y)
 
