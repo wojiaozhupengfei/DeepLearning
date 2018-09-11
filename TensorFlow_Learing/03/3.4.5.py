@@ -24,9 +24,10 @@ def smooth_curve(x):
     return y[5:len(y)-5]
 
 # 定义网络模型
-batch_size = 8
+batch_size = 4
 train_iter = 5000
 lr = 0.001
+display_step = 50
 x = tf.placeholder(tf.float32, [None, 2], 'x_input')
 y_ = tf.placeholder(tf.float32, [None, 1], 'y_input')
 
@@ -51,7 +52,7 @@ X = rdm.rand(dataset_size, 2)
 Y = [[(x1 + x2 < 1)] for (x1, x2) in X]
 
 train_loss = []
-xx = np.arange(10)
+xx = np.arange(train_iter/display_step)
 #开始训练
 init_op = tf.global_variables_initializer()
 with tf.Session() as sess:
@@ -64,7 +65,7 @@ with tf.Session() as sess:
         end = min(start + batch_size, dataset_size)
         sess.run(train_step, feed_dict={x:X[start:end], y_:Y[start:end]})
         #隔一段就打印损失
-        if i % 500 == 0:
+        if i % display_step == 0:
             total_cross_entropy = sess.run(cross_entropy, feed_dict={x:X, y_:Y})
             train_loss.append(total_cross_entropy)
             print('train_loss is:', train_loss)
@@ -74,6 +75,6 @@ with tf.Session() as sess:
     print(sess.run(w2))
 
 plt.plot(xx, train_loss)
-plt.xlim(0, 10)
+plt.xlim(0, display_step)
 plt.ylim(0, 2)
 plt.show()
