@@ -29,8 +29,8 @@ display_step = 50
 train_iter = 5000
 lr = 0.01
 total_loss_list = []
-xx = np.arange(train_iter/display_step)
-
+# xx = np.arange(train_iter/display_step)
+xx = np.arange(0, 20, 0.2)
 # 定义输入
 x = tf.placeholder(tf.float32, [None, 2], 'x_input')
 y_ = tf.placeholder(tf.float32, [None, 1], 'y_input')
@@ -77,6 +77,8 @@ with tf.Session() as sess:
 plt.plot(xx, total_loss_list)
 plt.xlim(0, display_step)
 plt.ylim(0, 2)
+plt.xlabel('x')
+plt.ylabel('y')
 plt.show()
 
 
