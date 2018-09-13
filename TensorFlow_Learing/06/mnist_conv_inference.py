@@ -28,7 +28,7 @@ FC_SIZE = 512
 #LeNet的训练过程的前向传播中加入dropout,测试过程并不加入dropout
 def inference(input_tensor, regularizer, train):
 	#第一层卷积,输入尺寸28*28*1， 卷积核5*5*32 步长1 ， SAME填充，输入通道1 输出通道32，得到尺寸28*28*32
-	with tf.get_variable_scope('layer-conv1'):
+	with tf.variable_scope('layer-conv1'):
 		conv1_weights = tf.get_variable('weight', [CONV1_SIZE, CONV1_SIZE, NUM_CHANNELS, CONV1_DEEP], initializer=tf.truncated_normal_initializer(stddev = 0.1))
 		conv1_bias = tf.get_variable('bias', [CONV1_DEEP], initializer=tf.constant_initializer(0.0))
 		#卷积计算
@@ -36,11 +36,11 @@ def inference(input_tensor, regularizer, train):
 		relu1 = tf.nn.relu(tf.nn.bias_add(conv1, conv1_bias))
 
 	#池化层，输入尺寸28*28*32， 池化的卷积核2*2， 步长2 SAME填充， 输出为14*14*32
-	with tf.get_variable_scope('layer-pooling1'):
+	with tf.variable_scope('layer-pooling1'):
 		pool1 = tf.nn.max_pool(relu1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 	#第二层卷积，输入尺寸14*14*32，卷积核5*5*64，步长1，SAME填充， 输出为14*14*64
-	with tf.get_variable('layer-conv2'):
+	with tf.variable_scope('layer-conv2'):
 		conv2_weights = tf.get_variable('weight', [CONV2_SIZE, CONV2_SIZE, CONV1_DEEP, CONV2_DEEP], initializer=tf.truncated_normal_initializer(stddev=0.1))
 		conv2_bias = tf.get_variable('bias', [CONV2_DEEP], initializer=tf.constant_initializer(0.0))
 		#计算第二层卷积
@@ -48,7 +48,7 @@ def inference(input_tensor, regularizer, train):
 		relu2 = tf.nn.relu(tf.nn.bias_add(conv2, conv2_bias))
 
 	#池化层，输入尺寸14*14*64， 池化卷积核2*2， 步长2， SAME填充， 输出为7*7*64
-	with tf.get_variable('layer-pooling2'):
+	with tf.variable_scope('layer-pooling2'):
 		pool2 = tf.nn.max_pool(relu2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 	#第一层全连接，要将卷积后的featuremap拉直
@@ -57,10 +57,11 @@ def inference(input_tensor, regularizer, train):
 	batch_size = pool_shape[0]
 	#节点数是7*7*64拉直
 	node = pool_shape[1]*pool_shape[2]*pool_shape[3]
+	#注意这里有个bug，reshape的时候，batch_size也必须是具体值，不能是None，如果还是设置为None，报错，不支持转换的类型
 	reshaped_pool2 = tf.reshape(pool2, [batch_size, node])
 
 	#第一层全连接
-	with tf.get_variable_scope('layer-fc1'):
+	with tf.variable_scope('layer-fc1'):
 		fc1_weights = tf.get_variable('weight', [node, FC_SIZE], initializer=tf.truncated_normal_initializer(stddev=0.1))
 		fc1_bias = tf.get_variable('bias', [FC_SIZE], initializer=tf.constant_initializer(0.1))
 		fc1 = tf.nn.relu(tf.matmul(reshaped_pool2, fc1_weights) + fc1_bias)
@@ -72,7 +73,7 @@ def inference(input_tensor, regularizer, train):
 			fc1 = tf.nn.dropout(fc1, 0.5)
 
 	#第二层的全连接
-	with tf.get_variable_scope('layer-fc2'):
+	with tf.variable_scope('layer-fc2'):
 		fc2_weights = tf.get_variable('weight', [FC_SIZE, OUTPUT_NODE], initializer=tf.truncated_normal_initializer(stddev=0.1))
 		fc2_bias = tf.get_variable('bias', [OUTPUT_NODE], initializer=tf.constant_initializer(0.1))
 		logit = tf.matmul(fc1, fc2_weights) + fc2_bias
