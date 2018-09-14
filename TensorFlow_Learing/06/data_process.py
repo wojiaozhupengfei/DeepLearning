@@ -106,7 +106,7 @@ def create_image_lists(sess, testing_precentage, validation_precentage):
     end_time_sub_dir = time.time()
     print('\n data process finished!!  time is %d \n'%(end_time_sub_dir - start_time_sub_dir))
 
-    return np.array([training_images, training_labels, validation_images, validatino_labels, testing_images, testing_labels])
+    return np.asarray([training_images, training_labels, validation_images, validatino_labels, testing_images, testing_labels])
 
 
 
