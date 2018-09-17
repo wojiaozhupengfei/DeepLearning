@@ -13,6 +13,7 @@ import glob
 import numpy as np
 from tensorflow.python.platform import gfile
 import time
+from logger_test import *
 
 #配置全局参数
 INPUT_DATA_PATH = '../dataset/flower_photos/flower_photos' #输入数据集路径
@@ -76,7 +77,8 @@ def create_image_lists(sess, testing_precentage, validation_precentage):
         start_time_file_name = time.time()
         #处理该种类文件夹内的所有花的图片，主要调用gfile来处理, 图片格式为299*299，以便inception-v3模型来处理
         for index_file_name,file_name in enumerate(file_list):
-            print('start %s file_name_index is %d-%d'%(sub_dir, index_file_name, length))
+            # print('start %s file_name_index is %d-%d'%(sub_dir, index_file_name, length))
+            logger.info('start %s file_name_index is %d-%d'%(sub_dir, index_file_name, length))
             image_raw_data = gfile.FastGFile(file_name, 'rb').read()#二进制数据
             image = tf.image.decode_jpeg(image_raw_data)#将二进制数据解码为数据矩阵，格式为W*H*C 数据类型为uint8
             if image.dtype != tf.float32:
@@ -97,14 +99,16 @@ def create_image_lists(sess, testing_precentage, validation_precentage):
                 training_labels.append(current_label)
         current_label += 1 #到下一个文件夹的时候标签就+1 所以五个文件夹的标签分别为0、1、2、3、4代表5中类别的花
         end_time_file_name = time.time()
-        print('\n finished %s, time is %d \n'%(sub_dir, end_time_file_name-start_time_file_name))
+        # print('\n finished %s, time is %d \n'%(sub_dir, end_time_file_name-start_time_file_name))
+        logger.info('\n finished %s, time is %d \n'%(sub_dir, end_time_file_name-start_time_file_name))
     #数据集分好之后，将训练数据打乱，以获得更好的训练效果
     state = np.random.get_state() #产生一种打乱的状态
     np.random.shuffle(training_images) #根据这种打乱状态打乱数据
     np.random.set_state(state) #设置打乱状态和上一次一样，保证了训练数据打乱之后，和标签对应关系还是对的，因为打乱方式一样
     np.random.shuffle(training_labels)
     end_time_sub_dir = time.time()
-    print('\n data process finished!!  time is %d \n'%(end_time_sub_dir - start_time_sub_dir))
+    # print('\n data process finished!!  time is %d \n'%(end_time_sub_dir - start_time_sub_dir))
+    logger.info('\n data process finished!!  time is %d \n'%(end_time_sub_dir - start_time_sub_dir))
 
     return np.asarray([training_images, training_labels, validation_images, validatino_labels, testing_images, testing_labels])
 
