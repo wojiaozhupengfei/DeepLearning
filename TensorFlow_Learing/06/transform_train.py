@@ -23,13 +23,15 @@ DATA_FILE = '../dataset/flower_photos/flower_processed_data.npy'
 #训练好的inception-v3模型文件所在路径
 CKPT_FILE = '../models/inception_v3_2016_08_28/inception_v3.ckpt'
 #保存fine_tuning好的模型文件
-TRAIN_FILE_SAVE_PATH = './save_model'
+TRAIN_FILE_SAVE_PATH = './save_model/tuned_model'
 
 #定义训练中使用的参数
 LEARNING_RATE = 0.0001 #学习率
 STEPS = 300
 BATCH_SIZE = 5
 N_CLASSES = 5
+display_steps = 10
+save_steps = STEPS/4
 
 #定义inception_v3模型中不需要的参数，这些参数需要我们自己训练，就是最后的全连接层的参数
 CHECKPOINT_EXCLUDE_SCOPES = 'InceptionV3/Logits, InceptionV3/AuxLogits'
@@ -61,8 +63,7 @@ def get_trainable_variables():
         variable_to_train.extend(variables)#这里注意extend和append区别，extend只接收list类型
     return variable_to_train
 
-def main(argv):
-
+def main(argv = None):
     #训练过程分为以下步骤：1 加载数据 2定义网络模型 3定义损失函数 4定义优化器 5定义评估指标
 
     #加载处理好的图片数据
@@ -88,8 +89,57 @@ def main(argv):
 
     #获取需要训练的变量
     trainable_variables = get_trainable_variables()
-    
 
+    #定义交叉熵损失函数，参数的正则项损失在定义模型的时候已经加载
+    tf.losses.softmax_cross_entropy(tf.one_hot(labels, N_CLASSES), logits, weights=1.0)
+    #定义优化器
+    train_step = tf.train.RMSPropOptimizer(LEARNING_RATE).minimize(tf.losses.get_total_loss())
+
+    #计算正确率，评估模型
+    with tf.name_scope('evaluation'):
+        correct_prediction = tf.equal(tf.argmax(logits, 1), labels)
+        evalution_step = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+    # 定义加载模型的函数
+    load_fn = slim.assign_from_checkpoint_fn(CKPT_FILE, get_tuned_variables(), ignore_missing_vars=True)
+
+    #定义保存训练好的模型
+    saver = tf.train.Saver()
+
+    #开始训练
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+
+        #加载谷歌训练好的模型
+        logger.info('Loading tuned variables from %s'%CKPT_FILE)
+        load_fn(sess)
+
+        start = 0
+        end = BATCH_SIZE
+        for i in range(STEPS):
+            logger.info('Step %d-%d is training....'%(i, STEPS))
+            try:
+                sess.run(train_step, feed_dict = {images:training_images[start:end], labels:training_labels[start:end]})
+            except Exception:
+                logger.error('trainging fail', exc_info = True)
+
+            #输出日志
+            if i % display_steps == 0 or i + 1 == STEPS:
+                validation_acc = sess.run(evalution_step, feed_dict = {images:validation_images, labels:validation_labels})
+                logger.info('Step %d-%d:validation acc = %.1f%%'%(i, STEPS, validation_acc*100.0))
+                #模型持久化
+                if i % save_steps == 0 or i+1 == STEPS:
+                    saver.save(sess, TRAIN_FILE_SAVE_PATH, global_step=i)
+            #因为数据处理时就已经打乱了顺序，所以在这里直接顺序使用训练数据就可以
+            start = end
+            if start == n_training_example:
+                start = 0
+            end = end + BATCH_SIZE
+            if end > n_training_example:
+                end = n_training_example
+        #最后在测试集上测试正确率
+        test_acc = sess.run(evalution_step, feed_dict = {images:testing_images, labels:testing_labels})
+        logger.info('Final test acc = %.1f%%'%(test_acc * 100.0))
 
 if __name__ == '__main__':
     tf.app.run()
