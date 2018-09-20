@@ -5,5 +5,5 @@
 # @Site    : 
 # @File    : __init__.py.py
 # @Software: PyCharm
-from .mnist_inference import *
-from .mnist_train import *
+from mnist_inference import *
+from mnist_train import *
