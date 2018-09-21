@@ -23,7 +23,7 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 #FileHandler  日志输出到文件
-file_handler = logging.FileHandler('transform_train_log.log', mode='a')
+file_handler = logging.FileHandler('log.log', mode='a')
 file_handler.setLevel(level = logging.DEBUG)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
