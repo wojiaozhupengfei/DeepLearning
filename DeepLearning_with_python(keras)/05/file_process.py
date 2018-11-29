@@ -100,12 +100,12 @@ for fname in fnames:
     else:
         pass
 
-log.info('total training cats images: %d'%(len(os.listdir(train_cats_dir))))
-log.info('total training dogs images: %d'%(len(os.listdir(train_dogs_dir))))
-log.info('total validation cats images: %d'%(len(os.listdir(validation_cats_dir))))
-log.info('total validation dogs images: %d'%(len(os.listdir(validation_dogs_dir))))
-log.info('total test cats images: %d'%(len(os.listdir(test_cats_dir))))
-log.info('total test dogs images: %d'%(len(os.listdir(test_dogs_dir))))
+# log.info('total training cats images: %d'%(len(os.listdir(train_cats_dir))))
+# log.info('total training dogs images: %d'%(len(os.listdir(train_dogs_dir))))
+# log.info('total validation cats images: %d'%(len(os.listdir(validation_cats_dir))))
+# log.info('total validation dogs images: %d'%(len(os.listdir(validation_dogs_dir))))
+# log.info('total test cats images: %d'%(len(os.listdir(test_cats_dir))))
+# log.info('total test dogs images: %d'%(len(os.listdir(test_dogs_dir))))
 
 
 
